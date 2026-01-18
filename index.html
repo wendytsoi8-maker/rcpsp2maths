@@ -33,7 +33,7 @@
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>立體圖形反推平台（分類 → 曲面 → 面數 → 生成）</h1>
+      <h1>立體圖形反推平台（錐/柱/球 → 曲面 → 面數 → 生成）</h1>
 
       <div class="grid">
         <div>
@@ -67,7 +67,7 @@
           </div>
 
           <div class="hint">
-            <span class="pill">說明</span>「面」只計平面；曲面會用「有沒有曲面」表示。<br/>
+            <span class="pill">說明</span>「面」只計平面；曲面另外用「有沒有曲面」表示。<br/>
             <span class="pill">涵蓋</span>3–20角柱、3–20角錐、圓柱、圓錐、球。
           </div>
 
@@ -76,12 +76,12 @@
 
         <div>
           <p class="resultTitle" id="resultName">尚未生成</p>
-          <p class="resultMeta" id="resultMeta">請依序選擇：錐/柱/球 → 曲面 → 面數，然後按「確定」。</p>
+          <p class="resultMeta" id="resultMeta">請依序選擇條件，然後按「確定」。</p>
 
           <div id="canvasWrap"></div>
 
           <div class="shot">
-            <div class="hint"><span class="pill">3D 圖片</span>按「確定」後，系統會自動生成一張 PNG 圖片顯示喺下面。</div>
+            <div class="hint"><span class="pill">3D 圖片（PNG）</span>按「確定」後會自動生成並顯示。</div>
             <img id="snapshot" alt="3D 圖片（PNG）" />
           </div>
         </div>
@@ -89,13 +89,12 @@
     </div>
   </div>
 
-  <!-- Three.js -->
-  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
-  <!-- OrbitControls -->
-  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+  <!-- ✅ 用 ES Modules 載入 Three.js + OrbitControls（更穩） -->
+  <script type="module">
+    import * as THREE from "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js";
+    import { OrbitControls } from "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/controls/OrbitControls.js";
 
-  <script>
-    // ---------- UI: faces options depending on family + curved ----------
+    // ---------- UI: faces options ----------
     const familyEl = document.getElementById("family");
     const curvedEl = document.getElementById("curved");
     const facesEl  = document.getElementById("faces");
@@ -115,7 +114,6 @@
       const family = familyEl.value;
       const curved = curvedEl.value;
 
-      // 球：只可能「有曲面 + 0個平面」
       if(family === "sphereFamily"){
         curvedEl.value = "yes";
         curvedEl.disabled = true;
@@ -128,30 +126,24 @@
       facesEl.disabled = false;
 
       if(family === "coneFamily"){
-        // 錐：
-        // - 有曲面：只有「圓錐」=> 平面數=1
-        // - 無曲面：3–20角錐 => 平面數 = n+1 => 4..21
         if(curved === "yes"){
           setFacesOptions([1], 1);
           facesEl.disabled = true;
         }else{
           const vals = [];
-          for(let f=4; f<=21; f++) vals.push(f);
+          for(let f=4; f<=21; f++) vals.push(f); // 3–20角錐 => 平面數 4–21
           setFacesOptions(vals, 4);
         }
         return;
       }
 
       if(family === "prismFamily"){
-        // 柱：
-        // - 有曲面：只有「圓柱」=> 平面數=2
-        // - 無曲面：3–20角柱 => 平面數 = n+2 => 5..22
         if(curved === "yes"){
           setFacesOptions([2], 2);
           facesEl.disabled = true;
         }else{
           const vals = [];
-          for(let f=5; f<=22; f++) vals.push(f);
+          for(let f=5; f<=22; f++) vals.push(f); // 3–20角柱 => 平面數 5–22
           setFacesOptions(vals, 5);
         }
         return;
@@ -169,11 +161,11 @@
     const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
     camera.position.set(3.2, 2.4, 3.6);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); // preserve for PNG
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     wrap.appendChild(renderer.domElement);
 
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
     const light1 = new THREE.DirectionalLight(0xffffff, 1.1);
@@ -194,15 +186,19 @@
     let currentMesh = null;
     let lastPngDataUrl = "";
 
+    const nameEl = document.getElementById("resultName");
+    const metaEl = document.getElementById("resultMeta");
+    const msgEl = document.getElementById("msg");
+    const snapshotEl = document.getElementById("snapshot");
+    const saveBtn = document.getElementById("savePng");
+
     function showMsg(text){
-      const el = document.getElementById("msg");
-      el.style.display = "block";
-      el.textContent = text;
+      msgEl.style.display = "block";
+      msgEl.textContent = text;
     }
     function hideMsg(){
-      const el = document.getElementById("msg");
-      el.style.display = "none";
-      el.textContent = "";
+      msgEl.style.display = "none";
+      msgEl.textContent = "";
     }
 
     function regularPolygonShape(n, radius=1.0){
@@ -226,7 +222,6 @@
     }
 
     function makePyramid(n){
-      // n 角錐：用 ConeGeometry 的 radialSegments=n 令底面變 n 邊形
       const geo = new THREE.ConeGeometry(1.05, 1.8, n, 1, false);
       geo.center();
       return geo;
@@ -240,8 +235,9 @@
       currentMesh = new THREE.Mesh(geometry, material);
       scene.add(currentMesh);
 
-      document.getElementById("resultName").textContent = name;
-      document.getElementById("resultMeta").innerHTML = metaHtml;
+      // ✅ 顯示名稱 + 資訊
+      nameEl.textContent = name;
+      metaEl.innerHTML = metaHtml;
     }
 
     function metaFor({family, curved, faces, n}){
@@ -264,25 +260,21 @@
     }
 
     function captureSnapshot(){
-      // render once to make sure latest frame is drawn
       renderer.render(scene, camera);
-      const url = renderer.domElement.toDataURL("image/png");
-      lastPngDataUrl = url;
-      document.getElementById("snapshot").src = url;
-      const btn = document.getElementById("savePng");
-      btn.disabled = false;
+      lastPngDataUrl = renderer.domElement.toDataURL("image/png");
+      snapshotEl.src = lastPngDataUrl;
+      saveBtn.disabled = false;
     }
 
     function generate(){
       hideMsg();
+      saveBtn.disabled = true;
 
       const family = familyEl.value;
       const curved = curvedEl.value;
       const faces = Number(facesEl.value);
 
-      // Decide solid
       if(family === "sphereFamily"){
-        // sphere
         const geo = new THREE.SphereGeometry(1.05, 48, 32);
         geo.center();
         setSolid({
@@ -296,23 +288,17 @@
 
       if(family === "coneFamily"){
         if(curved === "yes"){
-          // cone
-          if(faces !== 1){
-            showMsg("錐 + 有曲面 只會係「圓錐」，平面數應該係 1。");
-            return;
-          }
           const geo = new THREE.ConeGeometry(0.95, 1.8, 48);
           geo.center();
           setSolid({
             name: "圓錐",
-            metaHtml: metaFor({family, curved, faces}),
+            metaHtml: metaFor({family, curved, faces: 1}),
             geometry: geo
           });
           captureSnapshot();
           return;
         } else {
-          // n-gonal pyramid: faces = n + 1 => n = faces - 1, n must be 3..20
-          const n = faces - 1;
+          const n = faces - 1; // faces = n + 1
           if(n < 3 || n > 20){
             showMsg("錐 + 沒有曲面 只涵蓋 3–20 角錐，所以平面數應該係 4–21。");
             return;
@@ -330,23 +316,17 @@
 
       if(family === "prismFamily"){
         if(curved === "yes"){
-          // cylinder
-          if(faces !== 2){
-            showMsg("柱 + 有曲面 只會係「圓柱」，平面數應該係 2。");
-            return;
-          }
           const geo = new THREE.CylinderGeometry(0.95, 0.95, 1.8, 48);
           geo.center();
           setSolid({
             name: "圓柱",
-            metaHtml: metaFor({family, curved, faces}),
+            metaHtml: metaFor({family, curved, faces: 2}),
             geometry: geo
           });
           captureSnapshot();
           return;
         } else {
-          // n-gonal prism: faces = n + 2 => n = faces - 2, n must be 3..20
-          const n = faces - 2;
+          const n = faces - 2; // faces = n + 2
           if(n < 3 || n > 20){
             showMsg("柱 + 沒有曲面 只涵蓋 3–20 角柱，所以平面數應該係 5–22。");
             return;
@@ -367,7 +347,7 @@
 
     document.getElementById("go").addEventListener("click", generate);
 
-    document.getElementById("savePng").addEventListener("click", () => {
+    saveBtn.addEventListener("click", () => {
       if(!lastPngDataUrl) return;
       const a = document.createElement("a");
       a.href = lastPngDataUrl;
@@ -396,7 +376,9 @@
 
     // init
     updateFacesOptions();
+
+    // ✅ 先放一個預設立體，避免「一開係空白」令你以為無郁
+    generate();
   </script>
 </body>
 </html>
-
