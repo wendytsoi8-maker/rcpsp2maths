@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>立體圖形選擇器</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif; margin: 0; background:#f6f7fb;}
+    .wrap { max-width: 1100px; margin: 20px auto; padding: 16px; }
+    .card { background:#fff; border-radius: 14px; padding: 16px; box-shadow: 0 8px 22px rgba(0,0,0,.06); }
+    h1 { font-size: 20px; margin: 0 0 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
+    .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+    @media (max-width: 900px){ .controls { grid-template-columns: 1fr 1fr; } }
+    label { font-size: 13px; color:#333; display:block; margin-bottom: 6px; }
+    select, button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #d8dbe6; font-size: 15px; background:#fff; }
+    button { background:#1f6feb; color:#fff; border:none; cursor:pointer; font-weight: 600; }
+    button:hover { background:#1a5fd0; }
+    .hint { font-size: 13px; color:#555; margin-top: 10px; line-height: 1.5; }
+    .resultTitle { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
+    .resultMeta { font-size: 13px; color:#444; margin: 0 0 10px; line-height: 1.5; }
+    #canvasWrap { height: 520px; border-radius: 14px; overflow:hidden; border: 1px solid #e7e9f2; background: #0b1020; }
+    .pill { display:inline-block; font-size:12px; padding: 3px 8px; border-radius:999px; background:#eef2ff; color:#1f2a6b; margin-right:6px; }
+    .error { color:#b42318; font-size: 14px; margin-top: 8px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>立體圖形選擇器（按條件自動生成 3D 圖形）</h1>
+
+      <div class="grid">
+        <div>
+          <div class="controls">
+            <div>
+              <label>面的總數量（只計平面）</label>
+              <select id="faces">
+                <option value="any">不限</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+              </select>
+            </div>
+
+            <div>
+              <label>有沒有曲面</label>
+              <select id="curved">
+                <option value="any">不限</option>
+                <option value="no">沒有曲面</option>
+                <option value="yes">有曲面</option>
+              </select>
+            </div>
+
+            <div>
+              <label>底的數量</label>
+              <select id="bases">
+                <option value="any">不限</option>
+                <option value="0">0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+              </select>
+            </div>
+
+            <div>
+              <label>有沒有尖頂</label>
+              <select id="apex">
+                <option value="any">不限</option>
+                <option value="no">沒有尖頂</option>
+                <option value="yes">有尖頂</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="margin-top:10px; display:flex; gap:10px;">
+            <button id="go">確認並生成</button>
+          </div>
+
+          <div class="hint">
+            <span class="pill">操作</span>用手指/滑鼠拖曳可旋轉；滾輪/兩指可縮放。<br/>
+            <span class="pill">定義</span>「面」只計平面；曲面另外用「有冇曲面」表示。
+          </div>
+
+          <div id="msg" class="error" style="display:none;"></div>
+        </div>
+
+        <div>
+          <p class="resultTitle" id="resultName">尚未生成</p>
+          <p class="resultMeta" id="resultMeta">請先選擇條件，然後按「確認並生成」。</p>
+          <div id="canvasWrap"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Three.js -->
+  <script src="https://unpkg.com/three@0.160.0/build/three.min.js"></script>
+  <!-- OrbitControls -->
+  <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+
+  <script>
+    // 你可以喺呢度加更多圖形（metadata + 生成 geometry 的方法）
+    // facesFlat: 平面數量（不包含曲面）
+    // hasCurved: 是否有曲面
+    // baseCount: 底的數量
+    // hasApex: 是否有尖頂
+    const SOLIDS = [
+      {
+        name: "三角錐（Triangular Pyramid）",
+        facesFlat: 4, hasCurved: false, baseCount: 1, hasApex: true,
+        makeGeometry: () => new THREE.TetrahedronGeometry(1.2)
+      },
+      {
+        name: "四角錐（Square Pyramid）",
+        facesFlat: 5, hasCurved: false, baseCount: 1, hasApex: true,
+        makeGeometry: () => new THREE.ConeGeometry(1.1, 1.6, 4, 1, false) // 4 sides cone = square pyramid-like
+      },
+      {
+        name: "三角柱（Triangular Prism）",
+        facesFlat: 5, hasCurved: false, baseCount: 2, hasApex: false,
+        makeGeometry: () => {
+          // 以 Extrude 做三角柱
+          const shape = new THREE.Shape();
+          shape.moveTo(0, 1);
+          shape.lineTo(-0.9, -0.7);
+          shape.lineTo(0.9, -0.7);
+          shape.lineTo(0, 1);
+          const geo = new THREE.ExtrudeGeometry(shape, { depth: 1.2, bevelEnabled: false });
+          geo.center();
+          return geo;
+        }
+      },
+      {
+        name: "長方體（Rectangular Prism）",
+        facesFlat: 6, hasCurved: false, baseCount: 2, hasApex: false,
+        makeGeometry: () => new THREE.BoxGeometry(1.6, 1.1, 1.2)
+      },
+      {
+        name: "正方體（Cube）",
+        facesFlat: 6, hasCurved: false, baseCount: 2, hasApex: false,
+        makeGeometry: () => new THREE.BoxGeometry(1.3, 1.3, 1.3)
+      },
+      {
+        name: "圓柱體（Cylinder）",
+        facesFlat: 2, hasCurved: true, baseCount: 2, hasApex: false,
+        makeGeometry: () => new THREE.CylinderGeometry(0.9, 0.9, 1.6, 48)
+      },
+      {
+        name: "圓錐體（Cone）",
+        facesFlat: 1, hasCurved: true, baseCount: 1, hasApex: true,
+        makeGeometry: () => new THREE.ConeGeometry(0.95, 1.8, 48)
+      },
+      {
+        name: "球體（Sphere）",
+        facesFlat: 0, hasCurved: true, baseCount: 0, hasApex: false,
+        makeGeometry: () => new THREE.SphereGeometry(1.05, 48, 32)
+      }
+    ];
+
+    // --- Three.js scene setup ---
+    const wrap = document.getElementById("canvasWrap");
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0b1020);
+
+    const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
+    camera.position.set(3.2, 2.4, 3.6);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setSize(wrap.clientWidth, wrap.clientHeight);
+    wrap.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.1);
+    light1.position.set(4, 6, 3);
+    scene.add(light1);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.35));
+
+    const gridHelper = new THREE.GridHelper(10, 10, 0x2a335b, 0x1a2244);
+    gridHelper.position.y = -1.4;
+    scene.add(gridHelper);
+
+    const material = new THREE.MeshStandardMaterial({
+      color: 0x6ea8fe,
+      roughness: 0.35,
+      metalness: 0.05
+    });
+
+    let currentMesh = null;
+
+    function setSolid(solid){
+      if(currentMesh){
+        scene.remove(currentMesh);
+        currentMesh.geometry.dispose();
+      }
+      const geo = solid.makeGeometry();
+      currentMesh = new THREE.Mesh(geo, material);
+      scene.add(currentMesh);
+
+      // update text
+      document.getElementById("resultName").textContent = solid.name;
+      document.getElementById("resultMeta").innerHTML =
+        `平面數：<b>${solid.facesFlat}</b>；曲面：<b>${solid.hasCurved ? "有" : "沒有"}</b>；底數：<b>${solid.baseCount}</b>；尖頂：<b>${solid.hasApex ? "有" : "沒有"}</b>`;
+    }
+
+    function matchSolid(criteria){
+      // filter by criteria; "any" means ignore
+      const candidates = SOLIDS.filter(s => {
+        if(criteria.faces !== "any" && s.facesFlat !== Number(criteria.faces)) return false;
+        if(criteria.curved !== "any" && s.hasCurved !== (criteria.curved === "yes")) return false;
+        if(criteria.bases !== "any" && s.baseCount !== Number(criteria.bases)) return false;
+        if(criteria.apex !== "any" && s.hasApex !== (criteria.apex === "yes")) return false;
+        return true;
+      });
+      return candidates;
+    }
+
+    function showMsg(text){
+      const el = document.getElementById("msg");
+      el.style.display = "block";
+      el.textContent = text;
+    }
+    function hideMsg(){
+      const el = document.getElementById("msg");
+      el.style.display = "none";
+      el.textContent = "";
+    }
+
+    document.getElementById("go").addEventListener("click", () => {
+      hideMsg();
+      const criteria = {
+        faces: document.getElementById("faces").value,
+        curved: document.getElementById("curved").value,
+        bases: document.getElementById("bases").value,
+        apex: document.getElementById("apex").value
+      };
+
+      const candidates = matchSolid(criteria);
+      if(candidates.length === 0){
+        showMsg("搵唔到符合條件嘅立體圖形。你可以試下放寬其中一個條件（例如先選『有冇曲面』＋『底數』）。");
+        return;
+      }
+
+      // 如果有多個符合：先揀第一個；你之後可以改成顯示候選清單俾學生揀
+      setSolid(candidates[0]);
+
+      if(candidates.length > 1){
+        showMsg("提示：有多於一個立體符合條件，暫時已自動顯示其中一個。你可以之後加『候選清單』功能。");
+      }
+    });
+
+    function onResize(){
+      const w = wrap.clientWidth;
+      const h = wrap.clientHeight;
+      camera.aspect = w / h;
+      camera.updateProjectionMatrix();
+      renderer.setSize(w, h);
+    }
+    window.addEventListener("resize", onResize);
+
+    function animate(){
+      requestAnimationFrame(animate);
+      controls.update();
+      if(currentMesh){
+        currentMesh.rotation.y += 0.003; // 輕微自轉，吸引小朋友
+      }
+      renderer.render(scene, camera);
+    }
+    animate();
+  </script>
+</body>
+</html>
