@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>立體圖形 3D 平台</title>
+  <title>立體圖形反推平台</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", Arial, sans-serif; margin: 0; background:#f6f7fb;}
     .wrap { max-width: 1100px; margin: 20px auto; padding: 16px; }
@@ -11,74 +11,64 @@
     h1 { font-size: 20px; margin: 0 0 12px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     @media (max-width: 900px){ .grid { grid-template-columns: 1fr; } }
-    .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .controls { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    @media (max-width: 900px){ .controls { grid-template-columns: 1fr; } }
     label { font-size: 13px; color:#333; display:block; margin-bottom: 6px; }
-    select, button, input { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #d8dbe6; font-size: 15px; background:#fff; box-sizing: border-box; }
+    select, button { width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid #d8dbe6; font-size: 15px; background:#fff; box-sizing: border-box; }
     button { background:#1f6feb; color:#fff; border:none; cursor:pointer; font-weight: 600; }
     button:hover { background:#1a5fd0; }
     .hint { font-size: 13px; color:#555; margin-top: 10px; line-height: 1.5; }
-    .resultTitle { font-size: 16px; font-weight: 700; margin: 0 0 6px; }
-    .resultMeta { font-size: 13px; color:#444; margin: 0 0 10px; line-height: 1.5; }
-    #canvasWrap { height: 520px; border-radius: 14px; overflow:hidden; border: 1px solid #e7e9f2; background: #0b1020; }
+    .resultTitle { font-size: 18px; font-weight: 800; margin: 0 0 6px; }
+    .resultMeta { font-size: 13px; color:#444; margin: 0 0 10px; line-height: 1.6; }
+    .error { color:#b42318; font-size: 14px; margin-top: 10px; }
+    #canvasWrap { height: 440px; border-radius: 14px; overflow:hidden; border: 1px solid #e7e9f2; background: #0b1020; }
+    .shot { margin-top: 10px; }
+    .shot img { width: 100%; border-radius: 12px; border: 1px solid #e7e9f2; background:#fff; display:block; }
+    .row { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+    .btn2 { background:#111827; }
+    .btn2:hover { background:#0b1220; }
     .pill { display:inline-block; font-size:12px; padding: 3px 8px; border-radius:999px; background:#eef2ff; color:#1f2a6b; margin-right:6px; }
-    .error { color:#b42318; font-size: 14px; margin-top: 8px; }
-    .row { display:flex; gap:10px; margin-top:10px; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="card">
-      <h1>立體圖形 3D 平台（角錐／角柱／圓柱／圓錐／球）</h1>
+      <h1>立體圖形反推平台（分類 → 曲面 → 面數 → 生成）</h1>
 
       <div class="grid">
         <div>
           <div class="controls">
             <div>
-              <label>立體種類</label>
-              <select id="kind">
-                <option value="pyramid">角錐</option>
-                <option value="prism">角柱</option>
-                <option value="cylinder">圓柱</option>
-                <option value="cone">圓錐</option>
-                <option value="sphere">球</option>
+              <label>1）選擇：錐 / 柱 / 球</label>
+              <select id="family">
+                <option value="coneFamily">錐</option>
+                <option value="prismFamily">柱</option>
+                <option value="sphereFamily">球</option>
               </select>
             </div>
 
             <div>
-              <label>角數（只適用：角錐／角柱）</label>
-              <select id="n">
-                <!-- 你要求 1-20；我保留 1-20，但會對 1/2 角作提示 -->
-                <option value="1">1</option>
-                <option value="2">2</option>
-                <option value="3" selected>3</option>
-                <option value="4">4</option>
-                <option value="5">5</option>
-                <option value="6">6</option>
-                <option value="7">7</option>
-                <option value="8">8</option>
-                <option value="9">9</option>
-                <option value="10">10</option>
-                <option value="11">11</option>
-                <option value="12">12</option>
-                <option value="13">13</option>
-                <option value="14">14</option>
-                <option value="15">15</option>
-                <option value="16">16</option>
-                <option value="17">17</option>
-                <option value="18">18</option>
-                <option value="19">19</option>
-                <option value="20">20</option>
+              <label>2）有沒有曲面</label>
+              <select id="curved">
+                <option value="no">沒有曲面</option>
+                <option value="yes">有曲面</option>
               </select>
+            </div>
+
+            <div>
+              <label>3）有多少個面（只計平面）</label>
+              <select id="faces"></select>
             </div>
           </div>
 
           <div class="row">
-            <button id="go">確認並生成</button>
+            <button id="go">確定</button>
+            <button id="savePng" class="btn2" disabled>下載 3D 圖片（PNG）</button>
           </div>
 
           <div class="hint">
-            <span class="pill">操作</span>拖曳旋轉；滾輪/兩指縮放。<br/>
-            <span class="pill">提示</span>「角錐／角柱」最少要 3 角；1 角/2 角唔係有效多邊形。
+            <span class="pill">說明</span>「面」只計平面；曲面會用「有沒有曲面」表示。<br/>
+            <span class="pill">涵蓋</span>3–20角柱、3–20角錐、圓柱、圓錐、球。
           </div>
 
           <div id="msg" class="error" style="display:none;"></div>
@@ -86,8 +76,14 @@
 
         <div>
           <p class="resultTitle" id="resultName">尚未生成</p>
-          <p class="resultMeta" id="resultMeta">請先選擇立體種類，然後按「確認並生成」。</p>
+          <p class="resultMeta" id="resultMeta">請依序選擇：錐/柱/球 → 曲面 → 面數，然後按「確定」。</p>
+
           <div id="canvasWrap"></div>
+
+          <div class="shot">
+            <div class="hint"><span class="pill">3D 圖片</span>按「確定」後，系統會自動生成一張 PNG 圖片顯示喺下面。</div>
+            <img id="snapshot" alt="3D 圖片（PNG）" />
+          </div>
         </div>
       </div>
     </div>
@@ -99,6 +95,73 @@
   <script src="https://unpkg.com/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
   <script>
+    // ---------- UI: faces options depending on family + curved ----------
+    const familyEl = document.getElementById("family");
+    const curvedEl = document.getElementById("curved");
+    const facesEl  = document.getElementById("faces");
+
+    function setFacesOptions(values, defaultValue){
+      facesEl.innerHTML = "";
+      values.forEach(v => {
+        const opt = document.createElement("option");
+        opt.value = String(v);
+        opt.textContent = String(v);
+        facesEl.appendChild(opt);
+      });
+      if(defaultValue != null) facesEl.value = String(defaultValue);
+    }
+
+    function updateFacesOptions(){
+      const family = familyEl.value;
+      const curved = curvedEl.value;
+
+      // 球：只可能「有曲面 + 0個平面」
+      if(family === "sphereFamily"){
+        curvedEl.value = "yes";
+        curvedEl.disabled = true;
+        setFacesOptions([0], 0);
+        facesEl.disabled = true;
+        return;
+      }
+
+      curvedEl.disabled = false;
+      facesEl.disabled = false;
+
+      if(family === "coneFamily"){
+        // 錐：
+        // - 有曲面：只有「圓錐」=> 平面數=1
+        // - 無曲面：3–20角錐 => 平面數 = n+1 => 4..21
+        if(curved === "yes"){
+          setFacesOptions([1], 1);
+          facesEl.disabled = true;
+        }else{
+          const vals = [];
+          for(let f=4; f<=21; f++) vals.push(f);
+          setFacesOptions(vals, 4);
+        }
+        return;
+      }
+
+      if(family === "prismFamily"){
+        // 柱：
+        // - 有曲面：只有「圓柱」=> 平面數=2
+        // - 無曲面：3–20角柱 => 平面數 = n+2 => 5..22
+        if(curved === "yes"){
+          setFacesOptions([2], 2);
+          facesEl.disabled = true;
+        }else{
+          const vals = [];
+          for(let f=5; f<=22; f++) vals.push(f);
+          setFacesOptions(vals, 5);
+        }
+        return;
+      }
+    }
+
+    familyEl.addEventListener("change", updateFacesOptions);
+    curvedEl.addEventListener("change", updateFacesOptions);
+
+    // ---------- Three.js setup ----------
     const wrap = document.getElementById("canvasWrap");
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0x0b1020);
@@ -106,14 +169,16 @@
     const camera = new THREE.PerspectiveCamera(45, wrap.clientWidth / wrap.clientHeight, 0.1, 100);
     camera.position.set(3.2, 2.4, 3.6);
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true }); // preserve for PNG
     renderer.setSize(wrap.clientWidth, wrap.clientHeight);
     wrap.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
 
-    scene.add(new THREE.DirectionalLight(0xffffff, 1.1));
+    const light1 = new THREE.DirectionalLight(0xffffff, 1.1);
+    light1.position.set(4, 6, 3);
+    scene.add(light1);
     scene.add(new THREE.AmbientLight(0xffffff, 0.35));
 
     const gridHelper = new THREE.GridHelper(10, 10, 0x2a335b, 0x1a2244);
@@ -127,6 +192,7 @@
     });
 
     let currentMesh = null;
+    let lastPngDataUrl = "";
 
     function showMsg(text){
       const el = document.getElementById("msg");
@@ -160,8 +226,7 @@
     }
 
     function makePyramid(n){
-      // 用 n 邊「圓錐」近似 n 角錐：n=3/4/... 會出到三角錐/四角錐/...
-      // radialSegments = n → 底面變成 n 邊形
+      // n 角錐：用 ConeGeometry 的 radialSegments=n 令底面變 n 邊形
       const geo = new THREE.ConeGeometry(1.05, 1.8, n, 1, false);
       geo.center();
       return geo;
@@ -179,104 +244,138 @@
       document.getElementById("resultMeta").innerHTML = metaHtml;
     }
 
-    function metaFor(kind, n){
-      // 「面」只計平面；曲面另外講
-      if(kind === "pyramid"){
-        return `平面數：<b>${n + 1}</b>（側面 ${n} + 底 1）；曲面：<b>沒有</b>；底數：<b>1</b>`;
+    function metaFor({family, curved, faces, n}){
+      if(family === "sphereFamily"){
+        return `分類：<b>球</b>；曲面：<b>有</b>；平面數：<b>0</b>`;
       }
-      if(kind === "prism"){
-        return `平面數：<b>${n + 2}</b>（側面 ${n} + 底 2）；曲面：<b>沒有</b>；底數：<b>2</b>`;
+      if(family === "coneFamily"){
+        if(curved === "yes"){
+          return `分類：<b>錐</b>；曲面：<b>有</b>；平面數：<b>1</b>（底面）`;
+        }
+        return `分類：<b>錐</b>；曲面：<b>沒有</b>；平面數：<b>${faces}</b>（= ${n} 個側面 + 1 個底面）`;
       }
-      if(kind === "cylinder"){
-        return `平面數：<b>2</b>（上下底）; 曲面：<b>有</b>；底數：<b>2</b>`;
-      }
-      if(kind === "cone"){
-        return `平面數：<b>1</b>（底）; 曲面：<b>有</b>；底數：<b>1</b>`;
-      }
-      if(kind === "sphere"){
-        return `平面數：<b>0</b>；曲面：<b>有</b>；底數：<b>0</b>`;
+      if(family === "prismFamily"){
+        if(curved === "yes"){
+          return `分類：<b>柱</b>；曲面：<b>有</b>；平面數：<b>2</b>（上下底面）`;
+        }
+        return `分類：<b>柱</b>；曲面：<b>沒有</b>；平面數：<b>${faces}</b>（= ${n} 個側面 + 2 個底面）`;
       }
       return "";
     }
 
+    function captureSnapshot(){
+      // render once to make sure latest frame is drawn
+      renderer.render(scene, camera);
+      const url = renderer.domElement.toDataURL("image/png");
+      lastPngDataUrl = url;
+      document.getElementById("snapshot").src = url;
+      const btn = document.getElementById("savePng");
+      btn.disabled = false;
+    }
+
     function generate(){
       hideMsg();
-      const kind = document.getElementById("kind").value;
-      const n = Number(document.getElementById("n").value);
 
-      // 角錐/角柱：n 必須 >= 3
-      if((kind === "pyramid" || kind === "prism") && n < 3){
-        showMsg("角錐／角柱最少要 3 角（1 角/2 角唔係有效多邊形）。請改做 3–20。");
-        return;
-      }
+      const family = familyEl.value;
+      const curved = curvedEl.value;
+      const faces = Number(facesEl.value);
 
-      if(kind === "pyramid"){
-        const geo = makePyramid(n);
-        setSolid({
-          name: `${n} 角錐`,
-          metaHtml: metaFor(kind, n),
-          geometry: geo
-        });
-        return;
-      }
-
-      if(kind === "prism"){
-        const geo = makePrism(n);
-        setSolid({
-          name: `${n} 角柱`,
-          metaHtml: metaFor(kind, n),
-          geometry: geo
-        });
-        return;
-      }
-
-      if(kind === "cylinder"){
-        const geo = new THREE.CylinderGeometry(0.95, 0.95, 1.8, 48);
-        geo.center();
-        setSolid({
-          name: "圓柱",
-          metaHtml: metaFor(kind, n),
-          geometry: geo
-        });
-        return;
-      }
-
-      if(kind === "cone"){
-        const geo = new THREE.ConeGeometry(0.95, 1.8, 48);
-        geo.center();
-        setSolid({
-          name: "圓錐",
-          metaHtml: metaFor(kind, n),
-          geometry: geo
-        });
-        return;
-      }
-
-      if(kind === "sphere"){
+      // Decide solid
+      if(family === "sphereFamily"){
+        // sphere
         const geo = new THREE.SphereGeometry(1.05, 48, 32);
         geo.center();
         setSolid({
           name: "球",
-          metaHtml: metaFor(kind, n),
+          metaHtml: metaFor({family, curved:"yes", faces:0}),
           geometry: geo
         });
+        captureSnapshot();
         return;
       }
-    }
 
-    // UI: 選圓柱/圓錐/球就 disable 角數
-    function updateNEnabled(){
-      const kind = document.getElementById("kind").value;
-      const nSel = document.getElementById("n");
-      nSel.disabled = !(kind === "pyramid" || kind === "prism");
+      if(family === "coneFamily"){
+        if(curved === "yes"){
+          // cone
+          if(faces !== 1){
+            showMsg("錐 + 有曲面 只會係「圓錐」，平面數應該係 1。");
+            return;
+          }
+          const geo = new THREE.ConeGeometry(0.95, 1.8, 48);
+          geo.center();
+          setSolid({
+            name: "圓錐",
+            metaHtml: metaFor({family, curved, faces}),
+            geometry: geo
+          });
+          captureSnapshot();
+          return;
+        } else {
+          // n-gonal pyramid: faces = n + 1 => n = faces - 1, n must be 3..20
+          const n = faces - 1;
+          if(n < 3 || n > 20){
+            showMsg("錐 + 沒有曲面 只涵蓋 3–20 角錐，所以平面數應該係 4–21。");
+            return;
+          }
+          const geo = makePyramid(n);
+          setSolid({
+            name: `${n}角錐`,
+            metaHtml: metaFor({family, curved, faces, n}),
+            geometry: geo
+          });
+          captureSnapshot();
+          return;
+        }
+      }
+
+      if(family === "prismFamily"){
+        if(curved === "yes"){
+          // cylinder
+          if(faces !== 2){
+            showMsg("柱 + 有曲面 只會係「圓柱」，平面數應該係 2。");
+            return;
+          }
+          const geo = new THREE.CylinderGeometry(0.95, 0.95, 1.8, 48);
+          geo.center();
+          setSolid({
+            name: "圓柱",
+            metaHtml: metaFor({family, curved, faces}),
+            geometry: geo
+          });
+          captureSnapshot();
+          return;
+        } else {
+          // n-gonal prism: faces = n + 2 => n = faces - 2, n must be 3..20
+          const n = faces - 2;
+          if(n < 3 || n > 20){
+            showMsg("柱 + 沒有曲面 只涵蓋 3–20 角柱，所以平面數應該係 5–22。");
+            return;
+          }
+          const geo = makePrism(n);
+          setSolid({
+            name: `${n}角柱`,
+            metaHtml: metaFor({family, curved, faces, n}),
+            geometry: geo
+          });
+          captureSnapshot();
+          return;
+        }
+      }
+
+      showMsg("未能辨識你揀嘅組合，請重試。");
     }
 
     document.getElementById("go").addEventListener("click", generate);
-    document.getElementById("kind").addEventListener("change", () => {
-      updateNEnabled();
-    });
 
-    updateNEnabled();
+    document.getElementById("savePng").addEventListener("click", () => {
+      if(!lastPngDataUrl) return;
+      const a = document.createElement("a");
+      a.href = lastPngDataUrl;
+      a.download = "solid.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    });
 
     function onResize(){
       const w = wrap.clientWidth;
@@ -290,12 +389,14 @@
     function animate(){
       requestAnimationFrame(animate);
       controls.update();
-      if(currentMesh){
-        currentMesh.rotation.y += 0.003; // 輕微自轉
-      }
+      if(currentMesh) currentMesh.rotation.y += 0.003;
       renderer.render(scene, camera);
     }
     animate();
+
+    // init
+    updateFacesOptions();
   </script>
 </body>
 </html>
+
