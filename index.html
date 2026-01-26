@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>小二立體圖形選擇平台</title>
+  <title>小二立體圖形平台（底／側／面）</title>
   <style>
     :root { --bg:#0b1020; --card:#121a33; --text:#eef2ff; --muted:#b7c0ff; --btn:#2a3cff; --danger:#ff3b3b; }
     * { box-sizing: border-box; }
@@ -26,8 +26,9 @@
       padding: 14px;
       box-shadow: 0 10px 30px rgba(0,0,0,0.25);
     }
+
     .row { display:flex; gap:10px; align-items:center; margin: 10px 0; flex-wrap: wrap; }
-    label { font-size: 14px; color: var(--muted); min-width: 92px; }
+    label { font-size: 14px; color: var(--muted); min-width: 102px; }
     select {
       flex: 1;
       min-width: 180px;
@@ -38,6 +39,7 @@
       color: var(--text);
       outline: none;
     }
+
     .btns { display:flex; gap:10px; margin-top: 12px; }
     button {
       flex:1;
@@ -46,7 +48,7 @@
       border-radius: 12px;
       background: var(--btn);
       color: white;
-      font-weight: 700;
+      font-weight: 800;
       cursor: pointer;
       transition: transform .06s ease;
     }
@@ -55,50 +57,60 @@
       background: rgba(255,255,255,0.10);
       border: 1px solid rgba(255,255,255,0.14);
       color: var(--text);
-      font-weight: 700;
+      font-weight: 800;
     }
-    .hint { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.5; }
+
     .warn { margin-top: 10px; font-size: 13px; color: #ffd1d1; background: rgba(255,59,59,0.12); border: 1px solid rgba(255,59,59,0.25); padding: 10px 12px; border-radius: 12px; display:none; }
+    .hint { margin-top: 10px; font-size: 13px; color: var(--muted); line-height: 1.55; }
 
     .viewerTop { display:flex; align-items:flex-start; justify-content:space-between; gap: 10px; }
-    .nameBox { padding: 10px 12px; border-radius: 12px; border:1px solid rgba(255,255,255,0.14); background: rgba(10,14,28,0.55); min-height: 44px; }
+    .box { padding: 10px 12px; border-radius: 12px; border:1px solid rgba(255,255,255,0.14); background: rgba(10,14,28,0.55); }
     .nameTitle { font-size: 13px; color: var(--muted); margin-bottom: 4px; }
-    .shapeName { font-size: 18px; font-weight: 800; letter-spacing: .2px; }
+    .shapeName { font-size: 18px; font-weight: 900; letter-spacing: .2px; }
 
     #canvasWrap { margin-top: 12px; border-radius: 14px; overflow:hidden; border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); }
     canvas { display:block; width: 100%; height: 520px; }
-    .footerNote { margin-top: 10px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+    .facesPanel { margin-top: 12px; }
+    .facesList { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+    .chip {
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.08);
+      font-size: 13px;
+      color: var(--text);
+      white-space: nowrap;
+    }
+    .muted { color: var(--muted); font-size: 12px; line-height: 1.5; }
     .kbd { padding: 2px 6px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.18); background: rgba(255,255,255,0.08); font-size: 12px; }
   </style>
 </head>
 <body>
   <header>
-    <h1>小二立體圖形選擇平台</h1>
-    <p class="sub">流程：先選擇「錐／柱／球」→ 再選擇「有沒有曲面」→ 再選擇「有多少個面（平面）」→ 按「確定」顯示名稱與 3D 圖。</p>
+    <h1>小二立體圖形平台（底／側／面）</h1>
+    <p class="sub">流程：選擇「底的數量」→「側面的數量」→「總共有多少個面（平面）」→ 按「確定」顯示名稱、3D 圖，並列出所有面。</p>
   </header>
 
   <main class="wrap">
     <section class="card">
       <div class="row">
-        <label for="typeSel">立體類別</label>
-        <select id="typeSel">
-          <option value="prism">柱</option>
-          <option value="pyramid">錐</option>
-          <option value="sphere">球</option>
+        <label for="baseSel">底的數量</label>
+        <select id="baseSel">
+          <option value="2">2</option>
+          <option value="1">1</option>
+          <option value="0">0</option>
         </select>
       </div>
 
       <div class="row">
-        <label for="curveSel">曲面</label>
-        <select id="curveSel">
-          <option value="no">沒有曲面</option>
-          <option value="yes">有曲面</option>
-        </select>
+        <label for="sideSel">側面的數量</label>
+        <select id="sideSel"></select>
       </div>
 
       <div class="row">
-        <label for="facesSel">面（平面）</label>
-        <select id="facesSel"></select>
+        <label for="totalSel">總面數（平面）</label>
+        <select id="totalSel"></select>
       </div>
 
       <div class="btns">
@@ -109,27 +121,23 @@
       <div id="warnBox" class="warn"></div>
 
       <div class="hint">
-        <b>提示（教學用定義）：</b><br/>
-        「面」= 平面（不計曲面）<br/>
-        例如：圓柱有 <b>2</b> 個面 + 1 個曲面；圓錐有 <b>1</b> 個面 + 1 個曲面；球有 <b>0</b> 個面 + 1 個曲面。
-      </div>
-
-      <div class="footerNote">
-        操作：用滑鼠/手指拖曳可旋轉，滾輪可縮放。<br/>
-        （如學生用平板）可用手指拖拉旋轉。<br/>
-        3D 由程式即時生成，無需外部圖片檔。
+        <b>計算口徑（教學用）：</b><br/>
+        這裡「總面數」以 <b>平面（不計曲面）</b> 計。<br/>
+        但「所有面」展示會把 <b>曲面</b> 也列出：<br/>
+        圓柱：2 個圓形（平面）+ 1 個曲面；圓錐：1 個圓形（平面）+ 1 個曲面；球：1 個曲面。
       </div>
     </section>
 
     <section class="card">
       <div class="viewerTop">
-        <div class="nameBox" style="flex:1;">
+        <div class="box" style="flex:1;">
           <div class="nameTitle">立體圖形名稱</div>
           <div id="shapeName" class="shapeName">（尚未選擇）</div>
+          <div id="shapeMeta" class="muted" style="margin-top:6px;">請先完成三個選擇，然後按「確定」。</div>
         </div>
-        <div class="nameBox" style="width: 240px;">
-          <div class="nameTitle">小提示</div>
-          <div style="font-size:13px;color:var(--muted);line-height:1.4;">
+        <div class="box" style="width: 240px;">
+          <div class="nameTitle">操作提示</div>
+          <div style="font-size:13px;color:var(--muted);line-height:1.45;">
             拖曳旋轉<br/>
             滾輪縮放<br/>
             右鍵拖曳平移
@@ -140,7 +148,14 @@
       <div id="canvasWrap">
         <canvas id="c"></canvas>
       </div>
-      <div class="footerNote">
+
+      <div class="facesPanel">
+        <div class="nameTitle">該立體圖形的所有面</div>
+        <div id="facesExplain" class="muted">（尚未顯示）</div>
+        <div id="facesList" class="facesList"></div>
+      </div>
+
+      <div class="muted" style="margin-top:10px;">
         若顯示空白：請確認 GitHub Pages 網址使用 <span class="kbd">https</span>，並用較新版本瀏覽器開啟。
       </div>
     </section>
@@ -160,14 +175,18 @@
     import * as THREE from "three";
     import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
-    // ====== UI ======
-    const typeSel = document.getElementById("typeSel");
-    const curveSel = document.getElementById("curveSel");
-    const facesSel = document.getElementById("facesSel");
+    // ===== UI =====
+    const baseSel = document.getElementById("baseSel");
+    const sideSel = document.getElementById("sideSel");
+    const totalSel = document.getElementById("totalSel");
     const okBtn = document.getElementById("okBtn");
     const resetBtn = document.getElementById("resetBtn");
     const warnBox = document.getElementById("warnBox");
+
     const shapeNameEl = document.getElementById("shapeName");
+    const shapeMetaEl = document.getElementById("shapeMeta");
+    const facesExplainEl = document.getElementById("facesExplain");
+    const facesListEl = document.getElementById("facesList");
 
     function showWarn(msg) {
       warnBox.style.display = "block";
@@ -178,75 +197,32 @@
       warnBox.textContent = "";
     }
 
-    // 依「類別/曲面」更新可選 faces（平面數）
-    function setFacesOptions(values, selected = null) {
-      facesSel.innerHTML = "";
+    function setOptions(selectEl, values, selected = null) {
+      selectEl.innerHTML = "";
       for (const v of values) {
         const opt = document.createElement("option");
         opt.value = String(v);
         opt.textContent = String(v);
-        facesSel.appendChild(opt);
+        selectEl.appendChild(opt);
       }
-      if (selected !== null) facesSel.value = String(selected);
+      if (selected !== null) selectEl.value = String(selected);
     }
 
-    function refreshOptions() {
-      clearWarn();
-      const type = typeSel.value;
-      const curve = curveSel.value;
-
-      // 規則（面=平面）：
-      // n角柱：面 = n + 2（n=3..10）=> 5..12（無曲面）
-      // n角錐：面 = n + 1（n=3..10）=> 4..11（無曲面）
-      // 圓柱：面=2 + 曲面（有曲面）
-      // 圓錐：面=1 + 曲面（有曲面）
-      // 球：面=0 + 曲面（有曲面）
-      if (type === "sphere") {
-        curveSel.value = "yes";
-        curveSel.disabled = true;
-        setFacesOptions([0], 0);
-        facesSel.disabled = true;
-        return;
-      }
-      curveSel.disabled = false;
-      facesSel.disabled = false;
-
-      if (type === "prism") {
-        if (curve === "no") {
-          setFacesOptions([5,6,7,8,9,10,11,12], 5);
-        } else {
-          // 柱 + 有曲面 => 只可能係圓柱（面=2）
-          setFacesOptions([2], 2);
-        }
-        return;
-      }
-
-      if (type === "pyramid") {
-        if (curve === "no") {
-          setFacesOptions([4,5,6,7,8,9,10,11], 4);
-        } else {
-          // 錐 + 有曲面 => 只可能係圓錐（面=1）
-          setFacesOptions([1], 1);
-        }
-        return;
-      }
+    function refreshSideOptions() {
+      // 侧面可選：0,1,3-20（按你要求，不提供 2）
+      const values = [0,1];
+      for (let i=3;i<=20;i++) values.push(i);
+      setOptions(sideSel, values, values[0]);
     }
 
-    typeSel.addEventListener("change", refreshOptions);
-    curveSel.addEventListener("change", refreshOptions);
+    function refreshTotalOptions() {
+      // 總面數（平面）最大：20角柱 => 22
+      const values = [];
+      for (let i=0;i<=22;i++) values.push(i);
+      setOptions(totalSel, values, 0);
+    }
 
-    resetBtn.addEventListener("click", () => {
-      typeSel.value = "prism";
-      curveSel.value = "no";
-      curveSel.disabled = false;
-      facesSel.disabled = false;
-      shapeNameEl.textContent = "（尚未選擇）";
-      clearWarn();
-      refreshOptions();
-      setShape(null);
-    });
-
-    // ====== Three.js Scene ======
+    // ===== Three.js =====
     const canvas = document.getElementById("c");
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
     renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -261,22 +237,18 @@
     controls.enableDamping = true;
     controls.dampingFactor = 0.08;
 
-    // Lights
     scene.add(new THREE.AmbientLight(0xffffff, 0.55));
     const dir = new THREE.DirectionalLight(0xffffff, 1.0);
     dir.position.set(6, 10, 6);
     scene.add(dir);
 
-    // Ground
     const groundGeo = new THREE.PlaneGeometry(50, 50);
     const groundMat = new THREE.MeshStandardMaterial({ color: 0x0f1733, roughness: 0.9, metalness: 0.0 });
     const ground = new THREE.Mesh(groundGeo, groundMat);
     ground.rotation.x = -Math.PI / 2;
     ground.position.y = -2.2;
-    ground.receiveShadow = false;
     scene.add(ground);
 
-    // Helpers (subtle)
     const grid = new THREE.GridHelper(30, 30, 0x3340aa, 0x1c255c);
     grid.position.y = -2.19;
     grid.material.opacity = 0.25;
@@ -298,19 +270,13 @@
       currentGroup = null;
     }
 
-    // 建立立體（用幾何即時生成：不靠外部圖片/模型檔）
     function buildSolid(spec) {
-      // spec: { kind, n }
       const group = new THREE.Group();
-
-      // 主體材質
       const mat = new THREE.MeshStandardMaterial({
         color: 0x9fb3ff,
         roughness: 0.45,
         metalness: 0.05
       });
-
-      // 邊線（線框）
       const lineMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.65 });
 
       let geo;
@@ -318,18 +284,17 @@
       const height = 4.2;
 
       if (!spec) {
-        // 空（預設顯示一個淡淡方塊作 placeholder）
         geo = new THREE.BoxGeometry(3, 3, 3);
       } else if (spec.kind === "nPrism") {
         geo = new THREE.CylinderGeometry(radius, radius, height, spec.n, 1, false);
       } else if (spec.kind === "nPyramid") {
         geo = new THREE.CylinderGeometry(0, radius, height, spec.n, 1, false);
       } else if (spec.kind === "cylinder") {
-        geo = new THREE.CylinderGeometry(radius, radius, height, 48, 1, false);
+        geo = new THREE.CylinderGeometry(radius, radius, height, 64, 1, false);
       } else if (spec.kind === "cone") {
-        geo = new THREE.CylinderGeometry(0, radius, height, 64, 1, false);
+        geo = new THREE.CylinderGeometry(0, radius, height, 72, 1, false);
       } else if (spec.kind === "sphere") {
-        geo = new THREE.SphereGeometry(2.4, 48, 24);
+        geo = new THREE.SphereGeometry(2.4, 56, 28);
       } else {
         geo = new THREE.BoxGeometry(3, 3, 3);
       }
@@ -337,13 +302,9 @@
       const mesh = new THREE.Mesh(geo, mat);
       group.add(mesh);
 
-      // 線框（Edges）
       const edges = new THREE.EdgesGeometry(geo, 20);
       const wire = new THREE.LineSegments(edges, lineMat);
       group.add(wire);
-
-      // 令物件更居中
-      group.position.y = 0;
 
       return group;
     }
@@ -352,8 +313,6 @@
       clearCurrent();
       currentGroup = buildSolid(spec);
       scene.add(currentGroup);
-
-      // 根據物件大小自動調整鏡頭距離（簡單做法）
       controls.target.set(0, 0.2, 0);
       controls.update();
     }
@@ -370,76 +329,179 @@
 
     function animate() {
       resize();
-      if (currentGroup) currentGroup.rotation.y += 0.002; // 微微自轉，吸引注意
+      if (currentGroup) currentGroup.rotation.y += 0.002;
       controls.update();
       renderer.render(scene, camera);
       requestAnimationFrame(animate);
     }
 
-    // 初始
-    refreshOptions();
-    setShape(null);
-    animate();
+    // ===== 名稱／中文數字（3-20）=====
+    function toChineseNumber(n) {
+      const map = {
+        3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十",
+        11:"十一",12:"十二",13:"十三",14:"十四",15:"十五",16:"十六",17:"十七",18:"十八",19:"十九",20:"二十"
+      };
+      return map[n] ?? String(n);
+    }
 
-    // ====== 判斷輸入 -> 立體名稱 + spec ======
-    function getShapeFromSelection(type, curve, faces) {
-      const f = Number(faces);
+    // ===== 顯示「所有面」=====
+    function clearFacesPanel() {
+      facesExplainEl.textContent = "（尚未顯示）";
+      facesListEl.innerHTML = "";
+    }
+    function addChip(text) {
+      const div = document.createElement("div");
+      div.className = "chip";
+      div.textContent = text;
+      facesListEl.appendChild(div);
+    }
 
-      // 球
-      if (type === "sphere") {
-        if (curve !== "yes" || f !== 0) return null;
-        return { name: "球", spec: { kind: "sphere" } };
+    function showFacesInfo(result) {
+      // result: { kind, n?, name }
+      facesListEl.innerHTML = "";
+
+      if (result.kind === "nPrism") {
+        const n = result.n;
+        facesExplainEl.textContent = "柱：有 2 個底面（相同多邊形）＋ n 個側面（四邊形）。";
+        addChip(`底面：2 個 ${toChineseNumber(n)}邊形`);
+        addChip(`側面：${n} 個 四邊形`);
+        return;
       }
 
-      if (type === "prism") {
-        if (curve === "yes") {
-          if (f !== 2) return null;
-          return { name: "圓柱", spec: { kind: "cylinder" } };
-        } else {
-          const n = f - 2; // n角柱 => 面=n+2
-          if (n < 3 || n > 10) return null;
-          return { name: `${toChineseNumber(n)}角柱`, spec: { kind: "nPrism", n } };
+      if (result.kind === "nPyramid") {
+        const n = result.n;
+        facesExplainEl.textContent = "錐：有 1 個底面（多邊形）＋ n 個側面（三角形）。";
+        addChip(`底面：1 個 ${toChineseNumber(n)}邊形`);
+        addChip(`側面：${n} 個 三角形`);
+        return;
+      }
+
+      if (result.kind === "cylinder") {
+        facesExplainEl.textContent = "圓柱：平面有 2 個圓形；另外有 1 個曲面（側面）。";
+        addChip("底面：2 個 圓形（平面）");
+        addChip("側面：1 個 曲面");
+        return;
+      }
+
+      if (result.kind === "cone") {
+        facesExplainEl.textContent = "圓錐：平面有 1 個圓形；另外有 1 個曲面（側面）。";
+        addChip("底面：1 個 圓形（平面）");
+        addChip("側面：1 個 曲面");
+        return;
+      }
+
+      if (result.kind === "sphere") {
+        facesExplainEl.textContent = "球：沒有平面；只有 1 個曲面。";
+        addChip("曲面：1 個");
+        return;
+      }
+
+      facesExplainEl.textContent = "（未能顯示）";
+    }
+
+    // ===== 核心：由（底數, 側面數, 總面數）判斷立體 =====
+    function resolveShape(baseCount, sideCount, totalPlanes) {
+      // totalPlanes：平面數（不計曲面）
+      // 規則：
+      // n角柱：底=2，側=n(3-20)，總平面 = n+2
+      // n角錐：底=1，側=n(3-20)，總平面 = n+1
+      // 圓柱：底=2，側=1，總平面 = 2
+      // 圓錐：底=1，側=1，總平面 = 1
+      // 球：底=0，側=0，總平面 = 0
+
+      // 球
+      if (baseCount === 0 && sideCount === 0 && totalPlanes === 0) {
+        return { name: "球", kind: "sphere" };
+      }
+
+      // 圓柱
+      if (baseCount === 2 && sideCount === 1 && totalPlanes === 2) {
+        return { name: "圓柱", kind: "cylinder" };
+      }
+
+      // 圓錐
+      if (baseCount === 1 && sideCount === 1 && totalPlanes === 1) {
+        return { name: "圓錐", kind: "cone" };
+      }
+
+      // n角柱
+      if (baseCount === 2 && sideCount >= 3 && sideCount <= 20) {
+        const n = sideCount;
+        if (totalPlanes === n + 2) {
+          return { name: `${toChineseNumber(n)}角柱`, kind: "nPrism", n };
         }
       }
 
-      if (type === "pyramid") {
-        if (curve === "yes") {
-          if (f !== 1) return null;
-          return { name: "圓錐", spec: { kind: "cone" } };
-        } else {
-          const n = f - 1; // n角錐 => 面=n+1
-          if (n < 3 || n > 10) return null;
-          return { name: `${toChineseNumber(n)}角錐`, spec: { kind: "nPyramid", n } };
+      // n角錐
+      if (baseCount === 1 && sideCount >= 3 && sideCount <= 20) {
+        const n = sideCount;
+        if (totalPlanes === n + 1) {
+          return { name: `${toChineseNumber(n)}角錐`, kind: "nPyramid", n };
         }
       }
 
       return null;
     }
 
-    function toChineseNumber(n) {
-      const map = {3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十"};
-      return map[n] ?? String(n);
-    }
-
+    // ===== 事件 =====
     okBtn.addEventListener("click", () => {
       clearWarn();
-      const type = typeSel.value;
-      const curve = curveSel.value;
-      const faces = facesSel.value;
 
-      const result = getShapeFromSelection(type, curve, faces);
+      const baseCount = Number(baseSel.value);
+      const sideCount = Number(sideSel.value);
+      const totalPlanes = Number(totalSel.value);
+
+      const result = resolveShape(baseCount, sideCount, totalPlanes);
       if (!result) {
         shapeNameEl.textContent = "（沒有符合的立體圖形）";
-        showWarn("你選擇的組合未能對應到指定立體圖形。請再試一次：例如「柱＋有曲面＋2面」= 圓柱；「錐＋有曲面＋1面」= 圓錐；「球＋有曲面＋0面」= 球。");
+        shapeMetaEl.textContent = "你的輸入無法生成立體圖形。請按「重設」或更改選項後再試。";
+        clearFacesPanel();
         setShape(null);
+        showWarn("你的輸入無法生成立體圖形（例如：底=2、側面=3、總面=20）。請重設或重新選擇。");
         return;
       }
 
-      // 先顯示名稱，再顯示 3D（做個小延遲更符合你要求）
+      // 先顯示名稱
       shapeNameEl.textContent = result.name;
+      shapeMetaEl.textContent = `你選擇：底=${baseCount}、側面=${sideCount}、總面（平面）=${totalPlanes}`;
+
+      // 再顯示 3D（做小延遲）
       setShape(null);
-      setTimeout(() => setShape(result.spec), 350);
+      clearFacesPanel();
+
+      setTimeout(() => {
+        // spec
+        let spec = null;
+        if (result.kind === "sphere") spec = { kind: "sphere" };
+        if (result.kind === "cylinder") spec = { kind: "cylinder" };
+        if (result.kind === "cone") spec = { kind: "cone" };
+        if (result.kind === "nPrism") spec = { kind: "nPrism", n: result.n };
+        if (result.kind === "nPyramid") spec = { kind: "nPyramid", n: result.n };
+
+        setShape(spec);
+
+        // 最後顯示所有面
+        showFacesInfo(result);
+      }, 350);
     });
+
+    resetBtn.addEventListener("click", () => {
+      clearWarn();
+      baseSel.value = "2";
+      sideSel.value = "0";
+      totalSel.value = "0";
+      shapeNameEl.textContent = "（尚未選擇）";
+      shapeMetaEl.textContent = "請先完成三個選擇，然後按「確定」。";
+      clearFacesPanel();
+      setShape(null);
+    });
+
+    // ===== 初始化 =====
+    refreshSideOptions();
+    refreshTotalOptions();
+    setShape(null);
+    clearFacesPanel();
+    animate();
   </script>
 </body>
 </html>
