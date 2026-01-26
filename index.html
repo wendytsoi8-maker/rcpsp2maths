@@ -107,9 +107,10 @@
     <section class="card">
       <div class="row">
         <label for="baseSel">底的數量</label>
+        <!-- ✅ 由 1 排先，再到 2 -->
         <select id="baseSel">
-          <option value="2">2</option>
           <option value="1">1</option>
+          <option value="2">2</option>
         </select>
       </div>
 
@@ -232,7 +233,7 @@
     baseSel.addEventListener("change", refreshDefaultTotal);
     sideSel.addEventListener("change", refreshDefaultTotal);
 
-    // ===== 中文數字（0–99 夠用）=====
+    // ===== 中文數字（0–99）=====
     function numToZh(n) {
       const digits = ["零","一","二","三","四","五","六","七","八","九"];
       if (n < 10) return digits[n];
@@ -242,12 +243,11 @@
       return digits[Math.floor(n / 10)] + "十" + digits[n % 10];
     }
 
-    // ✅ 平面圖形名稱：三角形 / 四邊形 / 五邊形 / … / 二十邊形
+    // 平面圖形名稱：三角形 / 四邊形 / 五邊形 / … / 二十邊形
     function polygonNameZh(sides) {
       const zh = numToZh(sides);
       if (sides === 3) return "三角形";
       if (sides === 4) return "四邊形";
-      // 5 起一般叫「五邊形、六邊形…」
       return `${zh}邊形`;
     }
 
@@ -451,17 +451,15 @@
     function renderAllFaces(baseCount, sideCount) {
       clearFaces();
 
-      const baseShapeName = polygonNameZh(sideCount); // ✅ 三角形/四邊形/五邊形…/二十邊形
+      const baseShapeName = polygonNameZh(sideCount);
 
       if (baseCount === 2) {
-        // 角柱：2 個底面（n 邊形） + n 個側面（四邊形）
         drawPolygonFace(sideCount, `底面（${baseShapeName}）#1`);
         drawPolygonFace(sideCount, `底面（${baseShapeName}）#2`);
         for (let i = 1; i <= sideCount; i++) {
           drawRectangleFace(`側面（四邊形）#${i}`);
         }
       } else {
-        // 角錐：1 個底面（n 邊形） + n 個側面（三角形）
         drawPolygonFace(sideCount, `底面（${baseShapeName}）`);
         for (let i = 1; i <= sideCount; i++) {
           drawTriangleFace(`側面（三角形）#${i}`);
@@ -469,9 +467,8 @@
       }
     }
 
-    // ===== 名稱 =====
+    // ===== 名稱（角柱/角錐）=====
     function toChineseNumber(n) {
-      //（3–20）中文數字（用於「三角柱、十二角錐」等）
       const map = {3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十"};
       if (map[n]) return map[n];
       if (n > 10 && n < 20) return "十" + ({1:"一",2:"二",3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九"}[n-10]);
@@ -524,7 +521,6 @@
         return;
       }
 
-      // 依序：名稱 -> 3D -> 面圖
       shapeNameEl.textContent = result.name;
 
       setShape(null);
@@ -536,7 +532,8 @@
 
     resetBtn.addEventListener("click", () => {
       clearWarn();
-      baseSel.value = "2";
+      // ✅ 因為現在 1 排先，所以重設預設值也改成 1
+      baseSel.value = "1";
       sideSel.value = "3";
       refreshDefaultTotal();
       shapeNameEl.textContent = "（尚未選擇）";
