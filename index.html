@@ -107,10 +107,11 @@
     <section class="card">
       <div class="row">
         <label for="baseSel">底的數量</label>
-       <select id="baseSel">
-  <option value="2">2</option>
-  <option value="1">1</option>
-</select>
+        <!-- ✅ 只顯示 2/1 -->
+        <select id="baseSel">
+          <option value="2">2</option>
+          <option value="1">1</option>
+        </select>
       </div>
 
       <div class="row">
@@ -217,10 +218,10 @@
       setOptions(sideSel, arr, 3);
     }
 
-    // 令「總面數」可選 0–30（讓學生可輸入錯誤，系統再判斷）
+    // 令「總面數」可選 0–40（讓學生可輸入錯誤）
     function initTotalOptions() {
       const arr = [];
-      for (let i = 0; i <= 30; i++) arr.push(i);
+      for (let i = 0; i <= 40; i++) arr.push(i);
       setOptions(totalSel, arr, 0);
     }
 
@@ -374,14 +375,11 @@
       c.height = size;
       const ctx = c.getContext("2d");
 
-      // 背景
-      ctx.clearRect(0,0,size,size);
-      ctx.fillStyle = "rgba(255,255,255,0.00)";
-      ctx.fillRect(0,0,size,size);
-
-      // 多邊形
       const R = 55;
       const cx = size/2, cy = size/2;
+
+      ctx.clearRect(0,0,size,size);
+
       ctx.beginPath();
       for (let i = 0; i < sides; i++) {
         const a = -Math.PI/2 + i * (2*Math.PI/sides);
@@ -407,7 +405,6 @@
       const ctx = c.getContext("2d");
       ctx.clearRect(0,0,w,h);
 
-      // 矩形（四邊形）
       const pad = 30;
       ctx.beginPath();
       ctx.rect(pad, 45, w - pad*2, h - 90);
@@ -465,7 +462,6 @@
 
     // ===== 輸入 -> 判斷／名稱／3D spec =====
     function computeResult(baseCount, sideCount, totalFaces) {
-      // 只涵蓋：
       // baseCount=2 => n角柱（n=3..20）總面=n+2
       // baseCount=1 => n角錐（n=3..20）總面=n+1
       const n = sideCount;
@@ -506,7 +502,7 @@
 
       if (!result) {
         shapeNameEl.textContent = "（你的輸入無法生成立體圖形）";
-        showWarn("你的輸入無法生成立體圖形，請按「重設」後再試一次。\n提示：角柱（底=2）總面=側面+2；角錐（底=1）總面=側面+1。");
+        showWarn("你的輸入無法生成立體圖形，請按「重設」後再試一次。\n提示：底=2（角柱）總面=側面+2；底=1（角錐）總面=側面+1。");
         setShape(null);
         clearFaces();
         return;
