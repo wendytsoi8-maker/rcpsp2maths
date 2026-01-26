@@ -107,7 +107,6 @@
     <section class="card">
       <div class="row">
         <label for="baseSel">底的數量</label>
-        <!-- ✅ 只顯示 2/1 -->
         <select id="baseSel">
           <option value="2">2</option>
           <option value="1">1</option>
@@ -174,7 +173,6 @@
     </section>
   </main>
 
-  <!-- Three.js（ESM） + OrbitControls（ESM） -->
   <script type="importmap">
     {
       "imports": {
@@ -218,7 +216,6 @@
       setOptions(sideSel, arr, 3);
     }
 
-    // 令「總面數」可選 0–40（讓學生可輸入錯誤）
     function initTotalOptions() {
       const arr = [];
       for (let i = 0; i <= 40; i++) arr.push(i);
@@ -234,6 +231,16 @@
 
     baseSel.addEventListener("change", refreshDefaultTotal);
     sideSel.addEventListener("change", refreshDefaultTotal);
+
+    // ===== 中文數字（0–99 夠用；本頁主要用 3–20）=====
+    function numToZh(n) {
+      const digits = ["零","一","二","三","四","五","六","七","八","九"];
+      if (n < 10) return digits[n];
+      if (n === 10) return "十";
+      if (n < 20) return "十" + digits[n - 10];
+      if (n % 10 === 0) return digits[Math.floor(n / 10)] + "十";
+      return digits[Math.floor(n / 10)] + "十" + digits[n % 10];
+    }
 
     // ===== Three.js Scene =====
     const canvas = document.getElementById("c");
@@ -342,15 +349,6 @@
       requestAnimationFrame(animate);
     }
 
-    // ===== 中文數字（3–20） =====
-    function toChineseNumber(n) {
-      const map = {3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十"};
-      if (map[n]) return map[n];
-      if (n > 10 && n < 20) return "十" + ({1:"一",2:"二",3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九"}[n-10]);
-      if (n === 20) return "二十";
-      return String(n);
-    }
-
     // ===== 2D 面圖生成 =====
     function clearFaces() { facesGrid.innerHTML = ""; }
 
@@ -444,16 +442,18 @@
     function renderAllFaces(baseCount, sideCount) {
       clearFaces();
 
+      const zhSides = numToZh(sideCount); // ✅ 用中文數字標示「六邊形」而非「6邊形」
+
       if (baseCount === 2) {
         // 角柱：2 個 n 邊形底 + n 個四邊形側面
-        drawPolygonFace(sideCount, `底面（${sideCount}邊形）#1`);
-        drawPolygonFace(sideCount, `底面（${sideCount}邊形）#2`);
+        drawPolygonFace(sideCount, `底面（${zhSides}邊形）#1`);
+        drawPolygonFace(sideCount, `底面（${zhSides}邊形）#2`);
         for (let i = 1; i <= sideCount; i++) {
           drawRectangleFace(`側面（四邊形）#${i}`);
         }
       } else {
         // 角錐：1 個 n 邊形底 + n 個三角形側面
-        drawPolygonFace(sideCount, `底面（${sideCount}邊形）`);
+        drawPolygonFace(sideCount, `底面（${zhSides}邊形）`);
         for (let i = 1; i <= sideCount; i++) {
           drawTriangleFace(`側面（三角形）#${i}`);
         }
@@ -461,9 +461,16 @@
     }
 
     // ===== 輸入 -> 判斷／名稱／3D spec =====
+    function toChineseNumber(n) {
+      // 名稱仍用（3–20）中文數字
+      const map = {3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十"};
+      if (map[n]) return map[n];
+      if (n > 10 && n < 20) return "十" + ({1:"一",2:"二",3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九"}[n-10]);
+      if (n === 20) return "二十";
+      return String(n);
+    }
+
     function computeResult(baseCount, sideCount, totalFaces) {
-      // baseCount=2 => n角柱（n=3..20）總面=n+2
-      // baseCount=1 => n角錐（n=3..20）總面=n+1
       const n = sideCount;
       if (n < 3 || n > 20) return null;
 
@@ -502,7 +509,7 @@
 
       if (!result) {
         shapeNameEl.textContent = "（你的輸入無法生成立體圖形）";
-        showWarn("你的輸入無法生成立體圖形，請按「重設」後再試一次。\n提示：底=2（角柱）總面=側面+2；底=1（角錐）總面=側面+1。");
+        showWarn("你的輸入無法生成立體圖形，請按「重設」後再試一次。\n提示：底=2 總面=側面+2；底=1 總面=側面+1。");
         setShape(null);
         clearFaces();
         return;
@@ -514,13 +521,8 @@
       setShape(null);
       clearFaces();
 
-      setTimeout(() => {
-        setShape(result.spec);
-      }, 350);
-
-      setTimeout(() => {
-        renderAllFaces(result.baseCount, result.sideCount);
-      }, 700);
+      setTimeout(() => setShape(result.spec), 350);
+      setTimeout(() => renderAllFaces(result.baseCount, result.sideCount), 700);
     });
 
     resetBtn.addEventListener("click", () => {
