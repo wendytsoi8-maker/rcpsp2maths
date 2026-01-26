@@ -232,7 +232,7 @@
     baseSel.addEventListener("change", refreshDefaultTotal);
     sideSel.addEventListener("change", refreshDefaultTotal);
 
-    // ===== 中文數字（0–99 夠用；本頁主要用 3–20）=====
+    // ===== 中文數字（0–99 夠用）=====
     function numToZh(n) {
       const digits = ["零","一","二","三","四","五","六","七","八","九"];
       if (n < 10) return digits[n];
@@ -240,6 +240,15 @@
       if (n < 20) return "十" + digits[n - 10];
       if (n % 10 === 0) return digits[Math.floor(n / 10)] + "十";
       return digits[Math.floor(n / 10)] + "十" + digits[n % 10];
+    }
+
+    // ✅ 平面圖形名稱：三角形 / 四邊形 / 五邊形 / … / 二十邊形
+    function polygonNameZh(sides) {
+      const zh = numToZh(sides);
+      if (sides === 3) return "三角形";
+      if (sides === 4) return "四邊形";
+      // 5 起一般叫「五邊形、六邊形…」
+      return `${zh}邊形`;
     }
 
     // ===== Three.js Scene =====
@@ -442,27 +451,27 @@
     function renderAllFaces(baseCount, sideCount) {
       clearFaces();
 
-      const zhSides = numToZh(sideCount); // ✅ 用中文數字標示「六邊形」而非「6邊形」
+      const baseShapeName = polygonNameZh(sideCount); // ✅ 三角形/四邊形/五邊形…/二十邊形
 
       if (baseCount === 2) {
-        // 角柱：2 個 n 邊形底 + n 個四邊形側面
-        drawPolygonFace(sideCount, `底面（${zhSides}邊形）#1`);
-        drawPolygonFace(sideCount, `底面（${zhSides}邊形）#2`);
+        // 角柱：2 個底面（n 邊形） + n 個側面（四邊形）
+        drawPolygonFace(sideCount, `底面（${baseShapeName}）#1`);
+        drawPolygonFace(sideCount, `底面（${baseShapeName}）#2`);
         for (let i = 1; i <= sideCount; i++) {
           drawRectangleFace(`側面（四邊形）#${i}`);
         }
       } else {
-        // 角錐：1 個 n 邊形底 + n 個三角形側面
-        drawPolygonFace(sideCount, `底面（${zhSides}邊形）`);
+        // 角錐：1 個底面（n 邊形） + n 個側面（三角形）
+        drawPolygonFace(sideCount, `底面（${baseShapeName}）`);
         for (let i = 1; i <= sideCount; i++) {
           drawTriangleFace(`側面（三角形）#${i}`);
         }
       }
     }
 
-    // ===== 輸入 -> 判斷／名稱／3D spec =====
+    // ===== 名稱 =====
     function toChineseNumber(n) {
-      // 名稱仍用（3–20）中文數字
+      //（3–20）中文數字（用於「三角柱、十二角錐」等）
       const map = {3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九",10:"十"};
       if (map[n]) return map[n];
       if (n > 10 && n < 20) return "十" + ({1:"一",2:"二",3:"三",4:"四",5:"五",6:"六",7:"七",8:"八",9:"九"}[n-10]);
